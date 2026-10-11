@@ -1,0 +1,1067 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>Jasmine Xu</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Baskervville:ital@0;1&family=Homemade+Apple&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #070d21;
+        --ink: #e6e86e;
+        --ink-bright: #f9fb9c;
+        --block: #dcdcdc;
+        --serif:
+          Baskervville, Baskerville, "Baskerville Old Face", Georgia, serif;
+        --script: "Homemade Apple", "Brush Script MT", cursive;
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+        scroll-padding-top: 3.5rem;
+      }
+      *,
+      *::before,
+      *::after {
+        box-sizing: inherit;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: var(--serif);
+        font-size: clamp(1.1rem, 2.2vw, 1.5rem);
+        line-height: 1.3;
+      }
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+      a:hover {
+        text-decoration: underline;
+        text-underline-offset: 4px;
+      }
+      a:focus-visible {
+        outline: 2px solid var(--ink);
+        outline-offset: 4px;
+      }
+
+      /* ---------- nav (stays at the top while you scroll) ---------- */
+      nav {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 10;
+        display: flex;
+        justify-content: flex-end;
+        gap: 1.6rem;
+        padding: calc(0.8rem + env(safe-area-inset-top, 0px)) 1.5rem 0.8rem;
+        font-size: 1.3rem;
+        background: rgba(7, 13, 33, 1);
+        backdrop-filter: blur(6px);
+      }
+
+      /* ---------- intro: fills the whole screen, so "about me" is below the fold ---------- */
+      .intro {
+        position: relative;
+        min-height: 100vh;
+        min-height: 100svh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        text-align: center;
+        padding: 5rem 1rem 3rem;
+        overflow: hidden;
+      }
+      /* the photo sits behind; the canvas covers it and gets "erased" by the cursor */
+      .intro-photo {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        z-index: 0;
+      }
+      .reveal {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 1;
+        touch-action: pan-y; /* vertical swipes still scroll on phones */
+      }
+      .intro h1,
+      .intro .roles,
+      .intro .tagline {
+        z-index: 2;
+        pointer-events: none;
+        text-shadow: 0 0 14px rgba(0, 0, 0, 0.55);
+      }
+      .intro h1,
+      .intro .roles {
+        position: relative;
+      }
+      /* social icons (nav + footer) */
+      .socials {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+      }
+      .socials a {
+        display: inline-flex;
+        transition:
+          opacity 0.25s ease,
+          transform 0.25s ease;
+      }
+      .socials a:hover {
+        opacity: 0.7;
+        transform: translateY(-2px);
+        text-decoration: none;
+      }
+      .socials svg {
+        width: 100%;
+        height: 100%;
+      }
+      nav .socials {
+        margin-left: 0.2rem;
+        padding-left: 1.4rem;
+        border-left: 1px solid rgba(230, 232, 110, 0.35);
+      }
+      nav .socials a {
+        width: 1.35rem;
+        height: 1.35rem;
+      }
+      .footer {
+        display: flex;
+        justify-content: center;
+        padding: 1rem 1rem calc(4rem + env(safe-area-inset-bottom, 0px));
+      }
+      .footer .socials {
+        gap: 2rem;
+      }
+      .footer .socials a {
+        width: 1.9rem;
+        height: 1.9rem;
+      }
+      @media (max-width: 640px) {
+        nav {
+          gap: 1rem;
+        }
+        nav .socials {
+          padding-left: 1rem;
+          gap: 0.7rem;
+        }
+      }
+
+      /* typewriter cursor */
+      .intro .tagline {
+        min-height: 1.4em;
+      }
+      .caret {
+        display: inline-block;
+        width: 2px;
+        height: 1em;
+        margin-left: 3px;
+        vertical-align: -0.12em;
+        background: currentColor;
+        animation: blink 1s steps(1) infinite;
+      }
+      @keyframes blink {
+        50% {
+          opacity: 0;
+        }
+      }
+
+      /* elements float up slowly as they scroll into view */
+      .pop {
+        opacity: 0;
+        transform: translateY(40px);
+        transition:
+          opacity 1.4s ease,
+          transform 1.4s ease,
+          color 0.45s ease,
+          text-shadow 0.45s ease;
+      }
+      .pop.in {
+        opacity: 1;
+        transform: none;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .pop {
+          opacity: 1;
+          transform: none;
+          transition: none;
+        }
+        .caret {
+          animation: none;
+        }
+      }
+
+      .hint {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 4.8rem;
+        margin: 0;
+        text-align: center;
+        font-style: italic;
+        font-size: clamp(1rem, 2vw, 1.2rem);
+        opacity: 0;
+        transition: opacity 1.2s ease;
+        pointer-events: none;
+        z-index: 2;
+        text-shadow: 0 0 14px rgba(0, 0, 0, 0.55);
+      }
+      .hint.show {
+        opacity: 0.8;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .reveal,
+        .hint {
+          display: none;
+        }
+      }
+      .intro h1 {
+        margin: 0;
+        font: 400 clamp(2.6rem, 9vw, 5.6rem) / 1.2 var(--script);
+      }
+      .intro .roles {
+        margin: 0.2rem 0 0 clamp(0rem, 6vw, 5rem);
+        font-size: clamp(1.1rem, 2.6vw, 1.7rem);
+      }
+      .intro .tagline {
+        position: absolute;
+        bottom: 1.5rem;
+        left: 0;
+        right: 0;
+        margin: 0;
+        font-size: clamp(1.2rem, 2.8vw, 1.75rem);
+      }
+
+      section {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 0 1.5rem;
+      }
+
+      /* ---------- about ---------- */
+      .about {
+        display: grid;
+        grid-template-columns: 1fr 1.3fr;
+        gap: clamp(1.5rem, 6vw, 5rem);
+        align-items: center;
+        padding-top: clamp(3rem, 8vw, 5rem);
+      }
+      .portrait {
+        aspect-ratio: 317 / 400;
+        border-radius: 12% / 9.5%;
+        background: var(--block);
+        overflow: hidden;
+      }
+      .portrait img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+      h2 {
+        margin: 0;
+        font: 400 clamp(2.2rem, 6.5vw, 4.2rem) / 1.3 var(--script);
+      }
+      .about p {
+        margin: 0.6rem 0 0;
+        line-height: 1.17;
+      }
+
+      /* ---------- portfolio ---------- */
+      .portfolio {
+        max-width: 1100px;
+        margin-top: clamp(4rem, 10vw, 8rem);
+      }
+      .portfolio h2 {
+        width: fit-content;
+        margin-left: auto;
+        margin-right: auto;
+        text-align: center;
+        /* room for the long tail on the "f" so images never touch it */
+        margin-bottom: clamp(3rem, 8vw, 6rem);
+      }
+
+      /* One big canvas. Every box is placed as a % of the canvas. */
+      .collage {
+        position: relative;
+        aspect-ratio: 1000 / 680;
+      }
+      .collage a {
+        position: absolute;
+        display: block;
+        background: var(--block);
+        overflow: hidden;
+      }
+      .collage a img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+      .collage a:hover {
+        filter: brightness(1.08);
+      }
+      .collage a:focus-visible {
+        outline: 3px solid var(--ink);
+        outline-offset: 3px;
+      }
+
+      /* left group */
+      .l1 {
+        left: 0;
+        top: 0;
+        width: 17%;
+        height: 41.9%;
+      }
+      .l2 {
+        left: 26%;
+        top: 0;
+        width: 17.5%;
+        height: 31.6%;
+      }
+      .l3 {
+        left: 17%;
+        top: 18.4%;
+        width: 9%;
+        height: 13.2%;
+      }
+      .l4 {
+        left: 15%;
+        top: 31.6%;
+        width: 17.5%;
+        height: 19.1%;
+      }
+      .l5 {
+        left: 3%;
+        top: 57.4%;
+        width: 19%;
+        height: 19.9%;
+      }
+      .l6 {
+        left: 25%;
+        top: 63.2%;
+        width: 15%;
+        height: 28.7%;
+      }
+
+      /* middle group */
+      .m1 {
+        left: 47%;
+        top: 5.9%;
+        width: 15%;
+        height: 16.9%;
+      }
+      .m2 {
+        left: 50%;
+        top: 28.7%;
+        width: 17.5%;
+        height: 19.9%;
+      }
+      .m3 {
+        left: 47%;
+        top: 55.9%;
+        width: 18%;
+        height: 22.1%;
+      }
+
+      /* right group */
+      .r1 {
+        left: 69%;
+        top: 0;
+        width: 17%;
+        height: 31.6%;
+      }
+      .r2 {
+        left: 76%;
+        top: 24.3%;
+        width: 17%;
+        height: 26.5%;
+      }
+      .r3 {
+        left: 70%;
+        top: 58.8%;
+        width: 16%;
+        height: 30.9%;
+      }
+      .r4 {
+        left: 88%;
+        top: 64.7%;
+        width: 12%;
+        height: 20.6%;
+      }
+
+      /* ---------- videos ---------- */
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: clamp(1.5rem, 8.6%, 5rem);
+        row-gap: 0;
+        align-items: start;
+        margin: clamp(3rem, 12vw, 7rem) 1.5% 0;
+        padding-bottom: clamp(3rem, 8vw, 6rem);
+      }
+      .video {
+        background: var(--block);
+        aspect-ratio: 16 / 9;
+        margin-bottom: clamp(1rem, 4vw, 3.4rem);
+        overflow: hidden;
+      }
+      .video.tall {
+        aspect-ratio: 4 / 5;
+      } /* use for Instagram posts and reels */
+      .video iframe {
+        width: 100%;
+        height: 100%;
+        border: 0;
+        display: block;
+      }
+
+      /* ---------- "drawn" glow on the name, "about me" and "portfolio" ---------- */
+      /* A bright, glowing copy of the text sits on top, but is only visible
+         where the cursor has been (the mask is painted by the script below). */
+      .about h2 {
+        width: fit-content;
+      }
+      .glow-text {
+        position: relative;
+      }
+      .glow-text::after {
+        content: attr(data-text);
+        position: absolute;
+        inset: -30px; /* extra room so the glow isn't clipped */
+        padding: 30px; /* ...and the padding keeps the text exactly in place */
+        pointer-events: none;
+        color: var(--ink-bright);
+        text-shadow:
+          0 0 6px rgba(249, 251, 156, 0.95),
+          0 0 20px rgba(230, 232, 110, 0.75),
+          0 0 44px rgba(230, 232, 110, 0.5);
+        -webkit-mask-image: var(
+          --mask,
+          linear-gradient(transparent, transparent)
+        );
+        mask-image: var(--mask, linear-gradient(transparent, transparent));
+      }
+
+      /* ---------- phones ---------- */
+      @media (max-width: 640px) {
+        .about {
+          grid-template-columns: 1fr;
+        }
+        .portrait {
+          max-width: 320px;
+          margin: 0 auto;
+        }
+        /* the collage turns into a simple 2-column grid */
+        .collage {
+          aspect-ratio: auto;
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 0.8rem;
+        }
+        .collage a {
+          position: static;
+          width: auto;
+          height: auto;
+          aspect-ratio: 4 / 3;
+        }
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+      <symbol id="i-linkedin" viewBox="0 0 24 24">
+        <rect
+          x="3"
+          y="3"
+          width="18"
+          height="18"
+          rx="3"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.8"
+        />
+        <rect x="7" y="10" width="2" height="7" fill="currentColor" />
+        <circle cx="8" cy="7.3" r="1.2" fill="currentColor" />
+        <path
+          d="M11.5 17v-7h2v1c.5-.8 1.3-1.2 2.3-1.2 1.8 0 2.7 1.1 2.7 3V17h-2v-3.7c0-.9-.4-1.5-1.2-1.5s-1.8.6-1.8 1.6V17z"
+          fill="currentColor"
+        />
+      </symbol>
+      <symbol id="i-instagram" viewBox="0 0 24 24">
+        <rect
+          x="3"
+          y="3"
+          width="18"
+          height="18"
+          rx="5"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.8"
+        />
+        <circle
+          cx="12"
+          cy="12"
+          r="4"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.8"
+        />
+        <circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" />
+      </symbol>
+      <symbol id="i-substack" viewBox="0 0 24 24">
+        <path
+          d="M22.539 8.242H1.46V5.406h21.08v2.836zM1.46 10.812V24L12 18.11 22.54 24V10.812H1.46zM22.54 0H1.46v2.836h21.08V0z"
+          fill="currentColor"
+        />
+      </symbol>
+      <symbol id="i-youtube" viewBox="0 0 24 24">
+        <rect
+          x="2"
+          y="5"
+          width="20"
+          height="14"
+          rx="4.5"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.8"
+        />
+        <path d="M10 9.2v5.6l5-2.8z" fill="currentColor" />
+      </symbol>
+    </svg>
+    <nav aria-label="Main">
+      <a href="#top">home</a>
+      <a href="#story">story</a>
+      <a href="#portfolio">portfolio</a>
+      <div class="socials">
+        <a
+          href="https://www.linkedin.com/in/jasmine-xu-979b45342/"
+          target="_blank"
+          rel="noopener"
+          aria-label="LinkedIn"
+          ><svg><use href="#i-linkedin" /></svg
+        ></a>
+        <a
+          href="https://substack.com/@writewithjasmine"
+          target="_blank"
+          rel="noopener"
+          aria-label="Substack"
+          ><svg><use href="#i-substack" /></svg
+        ></a>
+        <a
+          href="https://www.instagram.com/filmwithjasmine/"
+          target="_blank"
+          rel="noopener"
+          aria-label="Instagram"
+          ><svg><use href="#i-instagram" /></svg
+        ></a>
+        <a
+          href="https://www.youtube.com/@filmwithjasmine"
+          target="_blank"
+          rel="noopener"
+          aria-label="YouTube"
+          ><svg><use href="#i-youtube" /></svg
+        ></a>
+      </div>
+    </nav>
+
+    <header class="intro" id="top">
+      <img
+        class="intro-photo"
+        src="photos/tree-cropped3.png"
+        alt="A woman walking under a blossoming tree"
+      />
+      <canvas class="reveal" id="reveal" aria-hidden="true"></canvas>
+      <p class="hint" id="hint" aria-hidden="true"></p>
+      <h1>Jasmine Xu</h1>
+      <p class="roles">film director & student</p>
+      <p class="tagline">
+        <span id="typed"
+          >always lorem ipsum dolor sit amet, consectetur adipiscing</span
+        ><span class="caret" aria-hidden="true"></span>
+      </p>
+    </header>
+
+    <section class="about" id="story">
+      <div class="portrait">
+        <img src="photos/Jasmine.png" alt="Portrait of Jasmine" />
+      </div>
+      <div>
+        <h2>about me</h2>
+        <p>
+          Hi! I’m Jasmine. I’m a second-year film studies + SASAH + Ivey AEO
+          student at Western University. I’m a video journalist, filmmaker,
+          photographer, designer, writer—basically… I’m a lot of things. I spent
+          all of high-school in the tech/startup space, and now I’m in the
+          humanities space. I’m very interested in the intersection of these two
+          worlds. I’m currently directing a short-film, working as a video
+          journalist at the Western Gazette, & exploring the startup space
+          again, on my own terms.
+        </p>
+      </div>
+    </section>
+
+    <section class="portfolio" id="portfolio">
+      <h2>portfolio</h2>
+
+      <!-- To add an image to a grey box, put an <img> inside its <a>:
+           <a class="m1" href="#"><img src="photos/yourfile.jpg" alt="Describe the photo"></a>
+           Boxes without an image stay grey.
+           Left: l1-l6   Middle: m1-m3   Right: r1-r4 -->
+      <div class="collage">
+        <!-- left -->
+        <a class="l1" href="#" aria-label="Project 1"
+          ><img src="photos/ARBRE.jpg" alt="Project 1"
+        /></a>
+        <a class="l2" href="#" aria-label="Project 2"
+          ><img src="photos/Cars.png" alt="Project 2"
+        /></a>
+        <a class="l3" href="#" aria-label="Project 3"
+          ><img src="photos/TrueBuddha.png" alt="Project 3"
+        /></a>
+        <a class="l4" href="#" aria-label="Project 4"
+          ><img src="photos/villequebec.jpg" alt="Project 4"
+        /></a>
+        <a class="l5" href="#" aria-label="Project 5"
+          ><img src="photos/Stools.png" alt="Project 5"
+        /></a>
+        <a class="l6" href="#" aria-label="Project 6"
+          ><img src="photos/Dancers.png" alt="Project 6"
+        /></a>
+
+        <!-- middle -->
+        <a class="m1" href="#" aria-label="Project 7"
+          ><img src="photos/Annie.png" alt="Project 7"
+        /></a>
+        <a class="m2" href="#" aria-label="Project 8"
+          ><img src="photos/villequebec3.jpg" alt="Project 8"
+        /></a>
+        <a class="m3" href="#" aria-label="Project 9"
+          ><img src="photos/woohoo.jpg" alt="Project 9"
+        /></a>
+
+        <!-- right -->
+        <a class="r1" href="#" aria-label="Project 10"
+          ><img src="photos/Guangzhou2.png" alt="Project 10"
+        /></a>
+        <a class="r2" href="#" aria-label="Project 11"
+          ><img src="photos/bikes.jpg" alt="Project 11"
+        /></a>
+        <a class="r3" href="#" aria-label="Project 12"
+          ><img src="photos/WOW2.jpg" alt="Project 12"
+        /></a>
+        <a class="r4" href="#" aria-label="Project 13"
+          ><img src="photos/lg1.jpg" alt="Project 13"
+        /></a>
+      </div>
+
+      <!-- VIDEOS. Replace the placeholder after /embed/ or /p/ with your own:
+         YouTube:   youtube.com/watch?v=ABC123  ->  https://www.youtube.com/embed/ABC123
+         Instagram: instagram.com/p/XYZ789/     ->  https://www.instagram.com/p/XYZ789/embed
+                    instagram.com/reel/XYZ789/  ->  https://www.instagram.com/reel/XYZ789/embed
+         Instagram boxes use class="video tall" so they're taller. -->
+      <div class="grid">
+        <div class="video">
+          <iframe
+            src="https://www.youtube.com/embed/7RtpDbgPfzE"
+            title="Video 1"
+            loading="lazy"
+            allow="accelerometer; encrypted-media; picture-in-picture"
+            allowfullscreen
+          ></iframe>
+        </div>
+        <div class="video">
+          <iframe
+            src="https://www.youtube.com/embed/Zsx_nuMwYqg"
+            title="Video 2"
+            loading="lazy"
+            allow="accelerometer; encrypted-media; picture-in-picture"
+            allowfullscreen
+          ></iframe>
+        </div>
+        <div class="video tall">
+          <iframe
+            src="https://www.instagram.com/p/DVZc5KbkQyU/embed"
+            title="Instagram video 1"
+            loading="lazy"
+            allowfullscreen
+          ></iframe>
+        </div>
+        <div class="video tall">
+          <iframe
+            src="https://www.instagram.com/p/Dd5KLC6xHdN/embed"
+            title="Instagram video 2"
+            loading="lazy"
+            allowfullscreen
+          ></iframe>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div class="socials">
+        <a
+          href="https://www.linkedin.com/in/jasmine-xu-979b45342/"
+          target="_blank"
+          rel="noopener"
+          aria-label="LinkedIn"
+          ><svg><use href="#i-linkedin" /></svg
+        ></a>
+        <a
+          href="https://substack.com/@writewithjasmine"
+          target="_blank"
+          rel="noopener"
+          aria-label="Substack"
+          ><svg><use href="#i-substack" /></svg
+        ></a>
+        <a
+          href="https://www.instagram.com/filmwithjasmine/"
+          target="_blank"
+          rel="noopener"
+          aria-label="Instagram"
+          ><svg><use href="#i-instagram" /></svg
+        ></a>
+        <a
+          href="https://www.youtube.com/@filmwithjasmine"
+          target="_blank"
+          rel="noopener"
+          aria-label="YouTube"
+          ><svg><use href="#i-youtube" /></svg
+        ></a>
+      </div>
+    </footer>
+    <script>
+      /* Draw-to-reveal: move the cursor over the first screen to erase the cover */
+      (() => {
+        const intro = document.querySelector(".intro");
+        const canvas = document.getElementById("reveal");
+        const ctx = canvas.getContext("2d");
+        const cover =
+          getComputedStyle(document.documentElement)
+            .getPropertyValue("--bg")
+            .trim() || "#222120";
+        const hint = document.getElementById("hint");
+        let w = 0,
+          h = 0,
+          last = null,
+          travelled = 0,
+          userActive = false;
+
+        function resize() {
+          const rect = intro.getBoundingClientRect();
+          const nw = Math.round(rect.width),
+            nh = Math.round(rect.height);
+          if (nw === w && nh === h) return;
+          const dpr = window.devicePixelRatio || 1;
+          // keep what's already been revealed when the window changes size
+          const old = document.createElement("canvas");
+          old.width = canvas.width;
+          old.height = canvas.height;
+          if (w) old.getContext("2d").drawImage(canvas, 0, 0);
+          canvas.width = nw * dpr;
+          canvas.height = nh * dpr;
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+          ctx.globalCompositeOperation = "source-over";
+          if (w) {
+            ctx.clearRect(0, 0, nw, nh);
+            ctx.drawImage(old, 0, 0, old.width, old.height, 0, 0, nw, nh);
+          } else {
+            ctx.fillStyle = cover;
+            ctx.fillRect(0, 0, nw, nh);
+            // the page starts with a soft opening already revealed
+            opening(nw * OPEN.x, nh * OPEN.y, nw * OPEN.r);
+          }
+          w = nw;
+          h = nh;
+        }
+
+        // brush size and strength: smaller alpha = slower reveal
+        const brushSize = () => Math.max(70, Math.min(140, w * 0.09));
+        const STRENGTH = 0.12;
+
+        // where the first opening sits (fractions of the first screen) and its size
+        const OPEN = { x: 0.534, y: 0.756, r: 0.124 };
+
+        function opening(x, y, R) {
+          const g = ctx.createRadialGradient(x, y, 0, x, y, R);
+          g.addColorStop(0, "rgba(0,0,0,1)");
+          g.addColorStop(0.72, "rgba(0,0,0,1)");
+          g.addColorStop(1, "rgba(0,0,0,0)");
+          ctx.globalCompositeOperation = "destination-out";
+          ctx.fillStyle = g;
+          ctx.beginPath();
+          ctx.arc(x, y, R, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        function stamp(x, y, k = 1) {
+          const R = brushSize();
+          const g = ctx.createRadialGradient(x, y, 0, x, y, R);
+          g.addColorStop(0, `rgba(0,0,0,${STRENGTH * k})`);
+          g.addColorStop(1, "rgba(0,0,0,0)");
+          ctx.globalCompositeOperation = "destination-out";
+          ctx.fillStyle = g;
+          ctx.beginPath();
+          ctx.arc(x, y, R, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        function move(e) {
+          const rect = canvas.getBoundingClientRect();
+          const x = e.clientX - rect.left,
+            y = e.clientY - rect.top;
+          if (y < 0 || y > rect.height) {
+            last = null;
+            return;
+          }
+          if (last) {
+            const dx = x - last.x,
+              dy = y - last.y;
+            travelled += Math.hypot(dx, dy);
+            if (travelled > 60 && !userActive) {
+              userActive = true; // stop the demo once they start drawing
+              hint.classList.remove("show");
+            }
+            const steps = Math.max(
+              1,
+              Math.floor(Math.hypot(dx, dy) / (brushSize() / 4)),
+            );
+            for (let i = 1; i <= steps; i++) {
+              stamp(last.x + (dx * i) / steps, last.y + (dy * i) / steps);
+            }
+          } else {
+            stamp(x, y);
+          }
+          last = { x, y };
+        }
+
+        // The "ghost hand": after a moment the opening slowly grows by itself in a
+        // gentle spiral, showing that the page can be drawn on. It stops as soon
+        // as the visitor starts drawing.
+        function startGhost() {
+          const DELAY = 1500,
+            DURATION = 9000;
+          const t0 = performance.now() + DELAY;
+          let prev = null;
+          function frame(now) {
+            if (userActive) return;
+            const t = now - t0;
+            if (t < 0) return requestAnimationFrame(frame);
+            if (t > DURATION) {
+              hint.textContent = window.matchMedia("(hover: none)").matches
+                ? "swipe to uncover"
+                : "move your cursor to uncover";
+              hint.classList.add("show");
+              return;
+            }
+            const u = t / DURATION;
+            const R = w * OPEN.r;
+            const ang = u * Math.PI * 5;
+            const rad = R * (0.4 + 1.3 * u);
+            const x = w * OPEN.x + Math.cos(ang) * rad * 1.3;
+            const y = h * OPEN.y + Math.sin(ang) * rad * 0.9 - u * h * 0.18;
+            const k = 1.3 * (1 - u * 0.7);
+            if (prev) {
+              const dx = x - prev.x,
+                dy = y - prev.y;
+              const steps = Math.max(
+                1,
+                Math.floor(Math.hypot(dx, dy) / (brushSize() / 4)),
+              );
+              for (let i = 1; i <= steps; i++) {
+                stamp(prev.x + (dx * i) / steps, prev.y + (dy * i) / steps, k);
+              }
+            }
+            prev = { x, y };
+            requestAnimationFrame(frame);
+          }
+          requestAnimationFrame(frame);
+        }
+
+        resize();
+        window.addEventListener("resize", resize);
+        startGhost();
+        intro.addEventListener("pointermove", move);
+        intro.addEventListener("pointerdown", (e) => {
+          last = null;
+          move(e);
+        });
+        intro.addEventListener("pointerleave", () => (last = null));
+      })();
+    </script>
+    <script>
+      /* Typewriter: types a line, backspaces it, then types the next one.
+         Edit the lines below to change what it says. */
+      (() => {
+        const PHRASES = [
+          "走一步，看一步",
+          "embarrassment is the formula for liveliness.",
+          "is it possible to live a life with no closure?",
+          "the beginnings of being trilingual",
+          "peeling diasporic identity",
+        ];
+        const TYPE_SPEED = 75, // ms per letter typed
+          ERASE_SPEED = 35, // ms per letter deleted
+          HOLD = 2000, // how long a finished line stays
+          GAP = 450; // pause before the next line starts
+
+        const el = document.getElementById("typed");
+        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches)
+          return;
+        let p = 0,
+          c = 0,
+          erasing = false;
+        el.textContent = "";
+
+        function tick() {
+          const phrase = PHRASES[p];
+          if (!erasing) {
+            c++;
+            el.textContent = phrase.slice(0, c);
+            if (c === phrase.length) {
+              erasing = true;
+              return setTimeout(tick, HOLD);
+            }
+            return setTimeout(tick, TYPE_SPEED + Math.random() * 40);
+          }
+          c--;
+          el.textContent = phrase.slice(0, c);
+          if (c === 0) {
+            erasing = false;
+            p = (p + 1) % PHRASES.length;
+            return setTimeout(tick, GAP);
+          }
+          setTimeout(tick, ERASE_SPEED);
+        }
+        setTimeout(tick, 900);
+      })();
+
+      /* Scroll-in: these fade and float up the first time they scroll into view */
+      (() => {
+        const targets = document.querySelectorAll(
+          ".about .portrait, .about > div, .portfolio h2, .collage a, .grid .video, .footer .socials",
+        );
+        targets.forEach((t) => t.classList.add("pop"));
+        const io = new IntersectionObserver(
+          (entries) => {
+            let n = 0;
+            entries.forEach((e) => {
+              if (!e.isIntersecting) return;
+              // elements arriving together appear one after another
+              e.target.style.transitionDelay = Math.min(n++ * 120, 700) + "ms";
+              e.target.classList.add("in");
+              // drop the stagger delay afterwards so hover effects respond instantly
+              e.target.addEventListener(
+                "transitionend",
+                () => (e.target.style.transitionDelay = ""),
+                { once: true },
+              );
+              io.unobserve(e.target);
+            });
+          },
+          { threshold: 0.12, rootMargin: "0px 0px -6% 0px" },
+        );
+        targets.forEach((t) => io.observe(t));
+      })();
+
+      /* Drawn glow: as the cursor moves over the name / "about me" / "portfolio",
+         it paints light onto the letters that slowly fades away. */
+      (() => {
+        const LIFE = 1500, // ms the glow lingers before fading out
+          PAD = 30, // matches the 30px in the CSS
+          HIT = 14; // how close to the letters the cursor counts as "on" them
+        const items = [".intro h1", ".about h2", ".portfolio h2"]
+          .map((sel) => document.querySelector(sel))
+          .filter(Boolean)
+          .map((el) => {
+            el.classList.add("glow-text");
+            el.dataset.text = el.textContent.trim();
+            const range = document.createRange();
+            range.selectNodeContents(el);
+            return { el, range, pts: [], last: null, R: 50 };
+          });
+
+        let running = false;
+        function paint(now) {
+          let any = false;
+          for (const it of items) {
+            it.pts = it.pts.filter((p) => now - p.t < LIFE);
+            if (!it.pts.length) {
+              it.el.style.removeProperty("--mask");
+              continue;
+            }
+            any = true;
+            const layers = it.pts.map((p) => {
+              const k = Math.pow(1 - (now - p.t) / LIFE, 1.5);
+              return `radial-gradient(circle ${it.R}px at ${p.x + PAD}px ${p.y + PAD}px, rgba(0,0,0,${k.toFixed(3)}) 0%, rgba(0,0,0,${(k * 0.55).toFixed(3)}) 50%, rgba(0,0,0,0) 100%)`;
+            });
+            it.el.style.setProperty("--mask", layers.join(","));
+          }
+          if (any) requestAnimationFrame(paint);
+          else running = false;
+        }
+
+        window.addEventListener("pointermove", (e) => {
+          const now = performance.now();
+          for (const it of items) {
+            const t = it.range.getBoundingClientRect();
+            const inside =
+              e.clientX > t.left - HIT &&
+              e.clientX < t.right + HIT &&
+              e.clientY > t.top - HIT &&
+              e.clientY < t.bottom + HIT;
+            if (!inside) {
+              it.last = null;
+              continue;
+            }
+            const box = it.el.getBoundingClientRect();
+            const x = e.clientX - box.left,
+              y = e.clientY - box.top;
+            it.R = parseFloat(getComputedStyle(it.el).fontSize) * 0.75;
+            if (it.last) {
+              const dx = x - it.last.x,
+                dy = y - it.last.y;
+              const steps = Math.max(
+                1,
+                Math.floor(Math.hypot(dx, dy) / (it.R / 3)),
+              );
+              for (let i = 1; i <= steps; i++) {
+                it.pts.push({
+                  x: it.last.x + (dx * i) / steps,
+                  y: it.last.y + (dy * i) / steps,
+                  t: now,
+                });
+              }
+            } else {
+              it.pts.push({ x, y, t: now });
+            }
+            if (it.pts.length > 60) it.pts.splice(0, it.pts.length - 60);
+            it.last = { x, y };
+          }
+          if (!running) {
+            running = true;
+            requestAnimationFrame(paint);
+          }
+        });
+      })();
+    </script>
+  </body>
+</html>
